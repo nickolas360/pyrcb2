@@ -29,6 +29,7 @@ from .itypes import IStr, IDict, IDefaultDict, ISet, User, Sender
 from .messages import (
     Message, Reply, Error, ANY, ANY_ARGS, SELF, matches_pattern,
     matches_any_pattern, WaitResult, WhoisReply)
+from .sasl import SASL
 from .utils import (
     ensure_list, ensure_coroutine_obj, cancel_future, cancel_futures,
     cancel_tasks, gather, optargs, get_argument_info, OptionalCoroutine,
@@ -77,6 +78,7 @@ class IRCBot:
         self.logger = None
         self.set_up_logging(log_communication, log_debug, log_kwargs)
         self.account_tracker = AccountTracker(self)
+        self.sasl = SASL(self)
         self.load_events(self)
         self.load_events(self.account_tracker)
 
@@ -628,9 +630,8 @@ class IRCBot:
     @Event.command("CAP")
     def on_cap(self, sender, target, subcommand: IStr, *args):
         if subcommand == "ACK":
-            # Some IRC servers add a trailing space after the extension name.
-            extension = args[0].strip()
-            self.extensions.add(extension)
+            extensions = set(args[0].split())
+            self.extensions |= extensions
 
     @Event.reply("RPL_WELCOME")
     def on_welcome(self, sender, target: IStr, *args):
@@ -899,7 +900,9 @@ class IRCBot:
         """Requests an IRC extension. (``CAP REQ`` command)
 
         When calling this method before the bot has been registered, remember
-        to send a ``CAP END`` message.
+        to send a ``CAP END`` message, either by setting the ``end_cap``
+        parameter to ``True`` in :meth:`register` (the default), or by manually
+        sending the message.
 
         :param str extension: The extension to request.
         :returns: A coroutine that blocks until the extension has been enabled
@@ -1261,22 +1264,24 @@ class IRCBot:
         if extensions:
             self.cap_req("multi-prefix")
             self.cap_req("account-notify")
-            self.send_command("CAP", "END")
+
+    async def sasl_auth_async(
+            self, account=None, password=None, mechanism="PLAIN", **kwargs):
+        await self.sasl.authenticate(account, password, mechanism, **kwargs)
 
     async def register_async(
             self, nickname, realname=None, username=None,
-            password=None, mode="8"):
+            password=None, mode="8", end_cap=True):
         realname = realname or nickname
         username = username or nickname
         self.pending_username = username
 
-        futures = []
+        if end_cap:
+            await self.send_command("CAP", "END")
         if password:
-            futures.append(self.send_command("PASS", password))
-        await self.gather(*(futures + [
-            self.send_command("NICK", nickname),
-            self.send_command("USER", username, mode, "*", realname),
-        ]))
+            await self.send_command("PASS", password)
+        await self.send_command("NICK", nickname)
+        await self.send_command("USER", username, mode, "*", realname)
 
         result = await self.wait_for(
             Reply("RPL_WELCOME", ANY_ARGS), errors=Error({
@@ -1286,14 +1291,7 @@ class IRCBot:
         )
 
         if not result.success:
-            if result.error is None:
-                raise ConnectionError("Lost connection to the server.")
-            sender, code, target, *args = result.error
-            reply = numerics.replies[code]
-            message = ""
-            if args:
-                message = ": {} :{}".format(" ".join(args[:-1]), args[-1])
-            raise ValueError("{}{}".format(reply, message))
+            raise result.to_exception("Could not register.")
 
     async def _listen_async(self):
         await self.connected.wait()
@@ -1340,7 +1338,7 @@ class IRCBot:
             # the next message.
             await self.wait_for_events_called()
             if message is None:
-                await self.ensure_future(cleanup())
+                await cleanup()
                 return
             read_message = self.ensure_future(read_message_coro)
             self.listen_futures.add(read_message)
@@ -1443,8 +1441,36 @@ class IRCBot:
             return coroutine
         self.run_until_complete(coroutine)
 
+    def sasl_auth(
+            self, account=None, password=None, mechanism="PLAIN", **kwargs):
+        """Authenticate (log in to an account) using SASL. The IRCv3 extension
+        ``sasl`` must be supported by the server.
+
+        This method should be called after :meth:`connect`, but before
+        :meth:`register`.
+
+        This method can be used synchronously or asynchronously. When called
+        from a coroutine, it must be awaited.
+
+        :param str account: The account to log in to.
+        :param str password: The password for the account.
+        :param str mechanism: The SASL mechanism to use. Currently, "PLAIN" is
+          the only supported mechanism.
+        :param kwargs: Keyword arguments to be used by the specified SASL
+          mechanism. Some SASL mechanisms may need arguments other than
+          ``account`` and ``password``.
+        :returns: A coroutine if the method was called from another coroutine.
+          Otherwise, this method will block.
+        :raises WaitError: if authentication fails.
+        """
+        coroutine = self.sasl_auth_async(
+            account, password, mechanism, **kwargs)
+        if asyncio.Task.current_task(loop=self.loop) is not None:
+            return coroutine
+        self.run_with_listen(coroutine)
+
     def register(self, nickname, realname=None, username=None,
-                 password=None, mode="8"):
+                 password=None, mode="8", end_cap=True):
         """Registers with the server. (Sends the ``NICK`` and ``USER``
         commands.)
 
@@ -1455,17 +1481,26 @@ class IRCBot:
         This method can be used synchronously or asynchronously. When called
         from a coroutine, it must be awaited.
 
-        :param str nickname: The nickname to use. A `ValueError` is raised if
+        :param str nickname: The nickname to use. A `WaitError` is raised if
           the nickname is already in use.
         :param str realname: The real name to use. If not specified,
           ``nickname`` will be used.
         :param str username: The username to use. If not specified,
           ``nickname`` will be used.
         :param str password: If specified, a ``PASS`` message will be sent with
-          the given password. This can be used to log in to accounts.
+          the given password. This can be used to log in to accounts on many
+          servers; however, if SASL is supported, it is better to use
+          :meth:`sasl_auth`.
         :param str mode: The mode to use when sending the ``USER`` message.
+        :param bool end_cap: Whether or not to end IRCv3 capability negotiation
+          by sending a ``CAP END`` message. If any ``CAP LS`` or ``CAP REQ``
+          (requests IRCv3 extensions) messages have been sent, sending a ``CAP
+          END`` message is required, or registration will not complete. By
+          default, :meth:`connect` requests extensions and thus requires ``CAP
+          END`` to be sent.
         :returns: A coroutine if this method was called from another coroutine.
           Otherwise, this method will block.
+        :raises WaitError: if the nickname is already in use.
         """
         coroutine = self.register_async(
             nickname, realname, username, password, mode)

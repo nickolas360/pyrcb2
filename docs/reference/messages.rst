@@ -41,6 +41,14 @@ Reply
 .. autoclass:: Reply
 
 
+Error
+-----
+
+.. class:: Error
+
+   An alias to `Reply`.
+
+
 Special message components
 --------------------------
 
@@ -91,6 +99,7 @@ WaitResult
    .. autoattribute:: error
    .. autoattribute:: error_cause
    .. autoattribute:: messages
+   .. automethod:: to_exception
 
 
 MultiWaitResult
@@ -99,6 +108,14 @@ MultiWaitResult
 .. autoclass:: MultiWaitResult
 
    .. autoattribute:: children
+
+
+WaitError
+---------
+
+.. autoclass:: WaitError
+
+   .. autoattribute:: result
 
 
 WhoisReply

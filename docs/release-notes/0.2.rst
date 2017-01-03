@@ -22,10 +22,19 @@
 
 .. currentmodule:: pyrcb2
 
-Release notes
-=============
+Version 0.2
+===========
 
-.. toctree::
+Changelog
+---------
 
-   0.2
-   0.1
+.. _changelog-0.2.0:
+
+0.2.0
+~~~~~
+
+* Added SASL support, with :meth:`IRCBot.sasl_auth`.
+* Improved IRCv3 capability/extension negotiation.
+* Added `WaitError`, an exception that represents an unsuccessful `WaitResult`.
+  Exceptions of this type are now thrown by :meth:`IRCBot.register` when
+  registration fails.

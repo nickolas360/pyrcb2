@@ -27,7 +27,7 @@ from .decorators import event_decorator, cast_args
 from .events import Event
 from .itypes import IStr, IDict, IDefaultDict, ISet, Sender, User
 from .messages import Message, Reply, Error, ANY, ANY_ARGS, SELF
-from .messages import WaitResult, MultiWaitResult, WhoisReply
+from .messages import WaitResult, MultiWaitResult, WaitError, WhoisReply
 from .pyrcb2 import IRCBot
 from .utils import OptionalCoroutine
 from . import accounts
@@ -37,7 +37,7 @@ from . import messages
 from . import numerics
 from . import utils
 
-__version__ = "0.1.3"
+__version__ = "0.2.0"
 
 # Silence Pyflakes warnings about unused imports.
 assert [Status]
@@ -45,7 +45,7 @@ assert [event_decorator, cast_args]
 assert [Event]
 assert [IStr, IDict, IDefaultDict, ISet, Sender, User]
 assert [Message, Reply, Error, ANY, ANY_ARGS, SELF]
-assert [WaitResult, MultiWaitResult, WhoisReply]
+assert [WaitResult, MultiWaitResult, WaitError, WhoisReply]
 assert [IRCBot]
 assert [OptionalCoroutine]
 assert [accounts, astdio, decorators, messages, numerics, utils]
