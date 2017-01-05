@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
+# Copyright (C) 2016-2017 nickolas360 <contact@nickolas360.com>
 #
 # This file is part of pyrcb2.
 #
