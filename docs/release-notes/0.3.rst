@@ -22,19 +22,18 @@
 
 .. currentmodule:: pyrcb2
 
-Version 0.2
+Version 0.3
 ===========
 
 Changelog
 ---------
 
-.. _changelog-0.2.0:
+.. _changelog-0.3.0:
 
-0.2.0
+0.3.0
 ~~~~~
 
-* Added SASL support, with :meth:`IRCBot.sasl_auth`.
-* Improved IRCv3 capability/extension negotiation.
-* Added `WaitError`, an exception that represents an unsuccessful `WaitResult`.
-  Exceptions of this type are now thrown by :meth:`IRCBot.register` when
-  registration fails.
+* Added support for the SASL "EXTERNAL" mechanism.
+* :meth:`IRCBot.connect` now accepts client certificates.
+* The ``ssl`` parameter in :meth:`IRCBot.connect` can now be an
+  `ssl.SSLContext` object to be used instead of the default context.
