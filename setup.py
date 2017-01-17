@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2016 nickolas360 <contact@nickolas360.com>
+# Copyright (C) 2016-2017 nickolas360 <contact@nickolas360.com>
 #
 # This file is part of pyrcb2.
 #
@@ -32,7 +32,7 @@ with open(os.path.join(SCRIPT_DIR, "misc/pypi-description.rst")) as f:
 
 setup(
     name="pyrcb2",
-    version="0.3.0",
+    version="0.3.1",
     description="An asyncio-based IRC bot library.",
     long_description=LONG_DESCRIPTION,
     url="https://github.com/nickolas360/pyrcb2",

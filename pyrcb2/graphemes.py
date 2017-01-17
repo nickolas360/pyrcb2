@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017 nickolas360 <contact@nickolas360.com>
+# Copyright (C) 2017 nickolas360 <contact@nickolas360.com>
 #
 # This file is part of pyrcb2.
 #
@@ -22,30 +22,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pyrcb2.  If not, see <http://www.gnu.org/licenses/>.
 
-from .accounts import Status
-from .decorators import event_decorator, cast_args
-from .events import Event
-from .itypes import IStr, IDict, IDefaultDict, ISet, Sender, User
-from .messages import Message, Reply, Error, ANY, ANY_ARGS, SELF
-from .messages import WaitResult, MultiWaitResult, WaitError, WhoisReply
-from .pyrcb2 import IRCBot
-from .utils import OptionalCoroutine
-from . import accounts
-from . import astdio
-from . import decorators
-from . import messages
-from . import numerics
-from . import utils
+from . import grapheme_break_db as db
 
-__version__ = "0.3.1"
 
-# Silence Pyflakes warnings about unused imports.
-assert [Status]
-assert [event_decorator, cast_args]
-assert [Event]
-assert [IStr, IDict, IDefaultDict, ISet, Sender, User]
-assert [Message, Reply, Error, ANY, ANY_ARGS, SELF]
-assert [WaitResult, MultiWaitResult, WaitError, WhoisReply]
-assert [IRCBot]
-assert [OptionalCoroutine]
-assert [accounts, astdio, decorators, messages, numerics, utils]
+def graphemes(string):
+    grapheme = ""
+    prev_break_value = None
+    for i, char in enumerate(string):
+        code_point = ord(char)
+        break_value = db.code_point_break_map.get(code_point, 0)
+        if i > 0 and db.break_table[prev_break_value][break_value] == 0:
+            yield grapheme
+            grapheme = ""
+        grapheme += char
+        prev_break_value = break_value
+    yield grapheme
