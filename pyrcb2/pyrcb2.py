@@ -555,13 +555,13 @@ class IRCBot:
         if self.capture_messages:
             self.captured_messages.append(message)
 
-        await self.ensure_future(self.gather(
+        await self.gather(
             self.call(Event, ("command", command), sender, *args),
             self.call(
                 Event, ("reply", command), sender,
                 *map(IStr, args[:1]), *args[1:],
             ),
-        ))
+        )
 
     @Event.command("PING")
     def on_ping(self, sender, *args):
@@ -740,6 +740,9 @@ class IRCBot:
         :param str channel: The channel to kick the user from.
         :param str target: The user to kick.
         :param str message: An optional kick message.
+        :returns: A coroutine that blocks until the user has been kicked from
+          the channel or an error has occurred.
+        :rtype: `OptionalCoroutine`; returns a `WaitResult` when awaited.
         """
         future = self.send_command("KICK", channel, target, *optargs(message))
         return self.wait_for(
@@ -818,12 +821,12 @@ class IRCBot:
 
             def matches_old_nick(nick):
                 return nick == self.old_nickname
-            result = await self.ensure_future(self.wait_for(
+            result = await self.wait_for(
                 Message(matches_old_nick, "NICK", nickname), errors=Error({
                     "ERR_ERRONEUSNICKNAME", "ERR_NICKNAMEINUSE",
                     "ERR_NICKCOLLISION", "ERR_UNAVAILRESOURCE",
                 }, nickname, ANY),
-            ))
+            )
 
             if nickname in self.pending_nicknames:
                 self.pending_nicknames[nickname] -= 1
@@ -1310,8 +1313,6 @@ class IRCBot:
 
     async def _listen_async(self):
         await self.connected.wait()
-        for coroutine in self.scheduled_coroutines:
-            self.ensure_future(coroutine)
         read_message = self.ensure_future(self.create_read_message())
         delay_loop = self.ensure_future(self.delay_loop())
         self.listen_futures |= {
@@ -1638,9 +1639,14 @@ class IRCBot:
         """
         return gather(*coroutines, loop=self.loop)
 
-    # Parses an IRC message.
     @classmethod
     def parse(cls, message):
+        """Parses an IRC message.
+
+        :param str message: The IRC message to parse.
+        :returns: The parsed IRC message.
+        :rtype: `Message`
+        """
         # Regex to parse IRC messages.
         match = re.match(r"""
             (?::  # Start of prefix
