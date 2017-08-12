@@ -32,7 +32,7 @@ with open(os.path.join(SCRIPT_DIR, "misc/pypi-description.rst")) as f:
 
 setup(
     name="pyrcb2",
-    version="0.4.2",
+    version="0.5.0",
     description="An asyncio-based IRC bot library.",
     long_description=LONG_DESCRIPTION,
     url="https://github.com/nickolas360/pyrcb2",
@@ -48,6 +48,7 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
     ],
     keywords="irc bot asyncio",
     packages=["pyrcb2"],

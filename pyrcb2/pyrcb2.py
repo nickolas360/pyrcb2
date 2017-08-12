@@ -695,13 +695,13 @@ class IRCBot:
             future,
             Message(SELF, "JOIN", channel),
             Reply("RPL_ENDOFNAMES", channel, ANY),
-            errors=Error([
+            errors=Error({
                 "ERR_BANNEDFROMCHAN", "ERR_INVITEONLYCHAN",
                 "ERR_BADCHANNELKEY", "ERR_CHANNELISFULL",
                 "ERR_BADCHANMASK", "ERR_NOSUCHCHANNEL",
                 "ERR_TOOMANYCHANNELS", "ERR_UNAVAILRESOURCE",
                 "ERR_TOOMANYTARGETS",
-            ], channel, ANY),
+            }, channel, ANY),
         )
 
     @cast_args
@@ -1181,8 +1181,7 @@ class IRCBot:
         :param capture: The messages to capture. Messages that match these
           patterns will be captured and returned in the `WaitResult`. This
           parameter can be a single message or a list, or set to `True`, in
-          which case message that match ``expected`` will be captured.
-          be captured.
+          which case messages that match ``expected`` will be captured.
         :param timeout: How many seconds to wait before returning with a
           timeout error. If set to None, `default_timeout` will be used. If set
           to 0 or a negative value, no timeout will be used.
@@ -1282,6 +1281,7 @@ class IRCBot:
         if extensions:
             self.cap_req("multi-prefix")
             self.cap_req("account-notify")
+            self.cap_req("extended-join")
 
     async def sasl_auth_async(
             self, account=None, password=None, mechanism="PLAIN", **kwargs):
@@ -1451,8 +1451,9 @@ class IRCBot:
           `ssl.SSLContext` object, in which case it will be used instead of the
           default context.
         :param bool extensions: If true, the bot will request some IRCv3
-          extensions using the ``CAP REQ`` command. Currently, ``multi-prefix``
-          and ``account-notify`` will be requested.
+          extensions using the ``CAP REQ`` command. Currently,
+          ``multi-prefix``, ``account-notify``, and ``extended-join`` will be
+          requested.
         :param client_cert: A client SSL/TLS certificate to be used.
           If this is a string, it is passed as the ``certfile`` argument to
           :meth:`ssl.SSLContext.load_cert_chain`; otherwise, this should be
