@@ -217,6 +217,6 @@ And it will work like this in private queries:
    `examples/example.py`__
       The finished bot created above.
 
-__ https://github.com/nickolas360/pyrcb2/tree/0.5.1/examples/
-__ https://github.com/nickolas360/pyrcb2/blob/0.5.1/examples/skeleton.py
-__ https://github.com/nickolas360/pyrcb2/blob/0.5.1/examples/example.py
+__ https://github.com/nickolas360/pyrcb2/tree/0.5.2/examples/
+__ https://github.com/nickolas360/pyrcb2/blob/0.5.2/examples/skeleton.py
+__ https://github.com/nickolas360/pyrcb2/blob/0.5.2/examples/example.py
